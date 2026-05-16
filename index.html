@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>我们的毕业纪念册</title>
+	<style>
+	* {
+		margin: 0;
+		padding: 0;
+		box-sizing: border-box;
+		font-family: "Microsoft YaHei", sans-serif;
+	}
+	body {
+		min-height: 100vh;
+		background: linear-gradient(120deg, #e0f7ff, #fef6ff);
+		padding: 40px 20px;
+		text-align: center;
+	}
+	.container {
+		max-width: 700px;
+		margin: 0 auto;
+	}
+	h1 {
+		font-size: 36px;
+		color: #2d3748;
+		margin-bottom: 12px;
+	}
+	.subtitle {
+		color: #6b7280;
+		font-size: 16px;
+		margin-bottom: 40px;
+	}
+	.card-list {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+		gap: 16px;
+	}
+	.card {
+		background: white;
+		padding: 18px 12px;
+		border-radius: 14px;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+		transition: all 0.3s ease;
+	}
+	.card a {
+		text-decoration: none;
+		color: #3b82f6;
+		font-size: 17px;
+		font-weight: 500;
+	}
+	.card:hover {
+		transform: translateY(-5px);
+		box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+	}
+	.footer {
+		margin-top: 50px;
+		font-size: 13px;
+		color: #9ca3af;
+	}
+	</style>
+</head>
+<body>
+	<div class="container">
+	<h1>独属于六五班的毕业纪念册</h1>
+	<p class="subtitle">愿我们前程似锦，友谊长存</p>
+	<div class="card-list">
+		<!-- 下面添加同学昵称，复制一行改名字即可 -->
+		<div class="card"><a href="mainpage.html">测试</a></div>
+		<div class="card"><a href="10.html">阴头</a></div>
+	</div>
+	<div class="footer">
+		<div class="card"><a href="gen.html">生成你自己的个人主页</a></div>
+		本纪念册仅用于同学留念 · 已征得本人及家长同意
+	</div>
+	</div>
+</body>
+</html>

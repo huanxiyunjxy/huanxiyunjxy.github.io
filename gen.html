@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>同学个人主页生成器</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Microsoft YaHei", sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(120deg, #e0f7ff, #fef6ff);
+      padding: 40px 20px;
+      text-align: center;
+    }
+
+    .box {
+      background: white;
+      max-width: 450px;
+      margin: 0 auto;
+      padding: 35px 30px;
+      border-radius: 18px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    }
+
+    h1 {
+      font-size: 26px;
+      color: #2d3748;
+      margin-bottom: 25px;
+    }
+
+    .item {
+      margin-bottom: 18px;
+      text-align: left;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      color: #4b5563;
+      font-size: 15px;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      font-size: 15px;
+    }
+
+    textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    button {
+      margin-top: 10px;
+      padding: 12px 26px;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      background: #2563eb;
+    }
+
+    .back {
+      display: inline-block;
+      margin-top: 25px;
+      color: #3b82f6;
+      text-decoration: none;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <script>alert(`请确定已取得监护人同意`)</script>
+  <div class="box">
+    <h1>🎓 个人主页自助生成</h1>
+    <div class="item">
+      <label>学号（文件名：学号.html）</label>
+      <input type="text" id="stuId" placeholder="例如：10" required>
+    </div>
+    <div class="item">
+      <label>昵称</label>
+      <input type="text" id="nick" placeholder="你的昵称（切记不要用真实姓名，否则打回）">
+    </div>
+    <div class="item">
+      <label>爱好</label>
+      <input type="text" id="hobby" placeholder="画画、看书、运动……（乱写打回）">
+    </div>
+    <div class="item">
+      <label>毕业寄语</label>
+      <textarea id="wish" placeholder="写下你的毕业祝福（乱写打回）"></textarea>
+    </div>
+
+    <button onclick="generate()">一键生成并下载</button>
+    <br>
+    <a href="index.html" class="back">← 返回毕业纪念册首页</a>
+  </div>
+
+  <script>
+    function generate() {
+      const stuId = document.getElementById('stuId').value.trim();
+      const nick = document.getElementById('nick').value.trim();
+      const hobby = document.getElementById('hobby').value.trim();
+      const wish = document.getElementById('wish').value.trim();
+
+      if (!stuId) return alert('请填写学号！');
+      if (!nick) return alert('请填写昵称！');
+      const html = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${nick}的个人主页</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Microsoft YaHei", sans-serif;
+    }
+    body {
+      min-height: 100vh;
+      background: linear-gradient(120deg, #e0f7ff, #fef6ff);
+      padding: 40px 20px;
+      text-align: center;
+    }
+    .box {
+      background: white;
+      max-width: 420px;
+      margin: 0 auto;
+      padding: 40px 30px;
+      border-radius: 18px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    }
+    h1 {
+      font-size: 28px;
+      color: #2d3748;
+      margin-bottom: 24px;
+    }
+    .nick {
+      font-size: 22px;
+      color: #3b82f6;
+      margin: 12px 0;
+      font-weight: 500;
+    }
+    .hobby {
+      margin: 20px 0;
+      color: #4b5563;
+      font-size: 17px;
+      line-height: 1.6;
+    }
+    .wish {
+      margin-top: 30px;
+      color: #6b7280;
+      font-size: 16px;
+      line-height: 1.7;
+    }
+    .back {
+      display: inline-block;
+      margin-top: 35px;
+      color: #3b82f6;
+      text-decoration: none;
+      font-size: 15px;
+    }
+    .back:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>我的小档案✨</h1>
+    <div class="nick">昵称：${nick}</div>
+    <div class="hobby">爱好：${hobby || '暂未填写'}</div>
+    <div class="wish">毕业寄语：${wish || '祝大家毕业快乐，友谊长存！'}</div>
+    <a href="index.html" class="back">← 返回纪念册首页</a>
+  </div>
+</body>
+</html>`;
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${stuId}.html`;
+      a.click();
+      URL.revokeObjectURL(url);
+      alert(`已生成：${stuId}.html，请发给我上传~`);
+    }
+  </script>
+</body>
+</html>
