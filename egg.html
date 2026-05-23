@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>Windows</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0078d7;
+      color: white;
+      font-family: 'Segoe UI', sans-serif;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: none;
+      overflow: hidden;
+      user-select: none;
+    }
+    .container {
+      text-align: center;
+      max-width: 700px;
+      padding: 40px;
+    }
+    .sad-face {
+      font-size: 120px;
+      margin-bottom: 30px;
+    }
+    h1 {
+      font-size: 28px;
+      font-weight: 300;
+      margin-bottom: 20px;
+    }
+    p {
+      font-size: 16px;
+      line-height: 1.8;
+      color: #ccc;
+      margin-bottom: 15px;
+    }
+    .percent {
+      font-size: 20px;
+      margin-top: 30px;
+      color: #fff;
+    }
+    .fake-link {
+      color: #7ab4ff;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+    /* 隐藏的关闭按钮 */
+    #real-close {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      width: 20px;
+      height: 20px;
+      opacity: 0;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="sad-face">:(</div>
+    <h1>你的电脑遇到问题，需要重新启动。</h1>
+    <p>我们只收集某些错误信息，然后为你重新启动。</p>
+    <p class="percent"><span id="num">0</span>% 完成</p>
+    <br>
+    <p>如果想了解更多，可以稍后在线搜索此错误：<span class="fake-link">CRITICAL_PROCESS_DIED</span></p>
+  </div>
+
+  <!-- 右下角连点5次才能关掉 -->
+  <div id="real-close"></div>
+
+  <script>
+    // 假进度条
+    let num = 0;
+    const timer = setInterval(() => {
+      if (num < 100) {
+        num += Math.floor(Math.random() * 3);
+        if (num > 100) num = 100;
+        document.getElementById('num').textContent = num;
+      } else {
+        clearInterval(timer);
+      }
+    }, 300);
+
+    // 阻止右键、F12、Ctrl+Shift+I 等
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('keydown', e => {
+      if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) {
+        e.preventDefault();
+      }
+      // ESC 也没用
+      if (e.key === 'Escape') e.preventDefault();
+    });
+
+    // 全屏一下更逼真
+    document.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+    }, { once: true });
+
+    // 右下角连点5次退出
+    let clickCount = 0;
+    document.getElementById('real-close').addEventListener('click', () => {
+      clickCount++;
+      if (clickCount >= 5) {
+        document.exitFullscreen?.();
+        document.body.innerHTML = '<h1 style="color:#333;text-align:center;margin-top:20vh;">哈哈被骗了吧 😏</h1>';
+        document.body.style.background = '#fff';
+        document.body.style.cursor = 'default';
+      }
+    });
+  </script>
+</body>
+</html>
