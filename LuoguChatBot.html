@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>洛谷私信机器人 Web版</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            background: #fff;
+            width: 100%;
+            max-width: 600px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 90vh;
+        }
+        h1 { margin: 0 0 15px 0; font-size: 24px; color: #333; text-align: center; }
+        .status-bar {
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #555;
+            display: flex;
+            justify-content: space-between;
+        }
+        .log-area {
+            flex: 1;
+            background: #282c34;
+            color: #61dafb;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+        }
+        .log-item { margin-bottom: 5px; word-break: break-all; }
+        .log-info { color: #98c379; }
+        .log-warn { color: #e5c07b; }
+        .log-error { color: #e06c75; }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        #startBtn { background: #28a745; color: white; }
+        #startBtn:hover { background: #218838; }
+        #startBtn:disabled { background: #6c757d; cursor: not-allowed; }
+        #stopBtn { background: #dc3545; color: white; }
+        #stopBtn:hover { background: #c82333; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>洛谷私信机器人 Web版</h1>
+    
+    <div class="status-bar">
+        <span id="statusText">状态: 未启动</span>
+        <span id="uidDisplay">UID: 未知</span>
+    </div>
+
+    <div class="log-area" id="logArea"></div>
+
+    <div class="controls">
+        <button id="startBtn" onclick="startBot()">启动机器人</button>
+        <button id="stopBtn" onclick="stopBot()" disabled>停止</button>
+    </div>
+</div>
+
+<script>
+    // ================= 配置与状态 =================
+    let ws = null;
+    let currentUid = null;
+    let csrfToken = document.querySelector("meta[name=csrf-token]")?.content;
+
+    // ================= 日志系统 =================
+    const logArea = document.getElementById('logArea');
+    const statusText = document.getElementById('statusText');
+    const uidDisplay = document.getElementById('uidDisplay');
+
+    function log(msg, type = 'info') {
+        const div = document.createElement('div');
+        div.className = `log-item log-${type}`;
+        const time = new Date().toLocaleTimeString();
+        div.textContent = `[${time}] ${msg}`;
+        logArea.appendChild(div);
+        logArea.scrollTop = logArea.scrollHeight;
+        console.log(`[机器人] ${msg}`);
+    }
+
+    function updateStatus(text, uid) {
+        statusText.textContent = `状态: ${text}`;
+        if (uid) uidDisplay.textContent = `UID: ${uid}`;
+    }
+
+    // ================= 核心功能 =================
+    
+    // 发送私信
+    async function sendPrivateMsg(targetUid, content) {
+        if (!csrfToken) {
+            log('无法获取 CSRF Token，请确保你在洛谷页面内运行此代码，或手动设置 csrfToken 变量！', 'error');
+            return;
+        }
+        try {
+            const response = await fetch('https://www.luogu.com.cn/api/chat/new', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'include',
+                body: JSON.stringify({ user: targetUid, content: content })
+            });
+            const result = await response.json();
+            log(`转发给 UID:${targetUid} 结果: ${result.message || '成功'}`, result.success ? 'info' : 'error');
+        } catch (error) {
+            log(`转发失败: ${error}`, 'error');
+        }
+    }
+
+    // 关键词回复表
+    const keywordReplies = {
+        "你好": "你好！我是洛谷自动助手。",
+        "帮助": "可用指令：\n#传话 [UID] [内容]\n#时间 [UID]\n#地点 [UID]\n#ip [UID]",
+        "洛谷": "洛谷是一个很棒的 OJ 平台！加油刷题！"
+    };
+
+    // 获取时间与位置
+    async function getTimeAndLocation() {
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('zh-CN');
+        const timeStr = now.toLocaleTimeString('zh-CN', { hour12: false });
+
+        let location = "未知地点";
+        let ipAddr = "未知IP";
+        try {
+            // 使用 ip-api.com
+            const response = await fetch('http://ip-api.com/json/?lang=zh-CN');
+            const data = await response.json();
+            if (data.status === "success") {
+                location = `${data.country} - ${data.regionName} - ${data.city}`;
+                ipAddr = data.query;
+            }
+        } catch (e) {
+            location = "定位服务请求失败";
+        }
+
+        return `<time_location>\n当前时间：${dateStr} ${timeStr}\n当前地点：${location}\n当前IP：${ipAddr}\n</time_location>`;
+    }
+
+    // ================= 机器人逻辑 =================
+    async function startBot() {
+        if (ws) {
+            log("机器人已在运行中", "warn");
+            return;
+        }
+
+        const wsUrl = "wss://ws.luogu.com.cn/ws";
+        log("正在连接 WebSocket...", "info");
+        updateStatus("连接中...", "...");
+        
+        try {
+            ws = new WebSocket(wsUrl);
+        } catch (e) {
+            log("浏览器不支持 WebSocket", "error");
+            return;
+        }
+
+        ws.onopen = () => {
+            log("WebSocket 已连接", "info");
+            
+            // 尝试获取 UID
+            currentUid = window._feInstance?.currentUser?.uid;
+            if (!currentUid) {
+                currentUid = prompt('无法自动获取 UID，请手动输入你的洛谷 UID：');
+            }
+
+            if (!currentUid) {
+                log("未获取到 UID，启动失败", "error");
+                ws.close();
+                return;
+            }
+
+            updateStatus("运行中", currentUid);
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+
+            ws.send(JSON.stringify({
+                channel: "chat",
+                channel_param: `${currentUid}`,
+                type: "join_channel",
+            }));
+            log(`已加入聊天频道，监听 UID: ${currentUid}`, "info");
+        };
+
+        ws.onmessage = async (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                if (data._ws_type === "server_broadcast") {
+                    const { message } = data;
+                    const content = message.content;
+                    const senderUid = message.sender.uid;
+
+                    // 1. #传话
+                    const forwardMatch = content.match(/^#传话\s+(\d+)\s+(.+)$/s);
+                    if (forwardMatch) {
+                        const targetUid = parseInt(forwardMatch[1], 10);
+                        const forwardContent = forwardMatch[2];
+                        log(`捕获传话指令 -> 目标: ${targetUid}`, "info");
+                        await sendPrivateMsg(targetUid, `[自动传话] ${forwardContent}`);
+                        setTimeout(() => sendPrivateMsg(senderUid, `[系统] 消息已转发`), 500);
+                        return;
+                    }
+
+                    // 2. #时间 / #地点 / #ip
+                    const queryMatch = content.match(/^#(时间|地点|date|time|ip)(?:\s+(\d+))?$/i);
+                    if (queryMatch) {
+                        const info = await getTimeAndLocation();
+                        const targetUid = queryMatch[2] ? parseInt(queryMatch[2], 10) : senderUid;
+                        log(`查询指令触发 -> 发送给: ${targetUid}`, "info");
+                        await sendPrivateMsg(targetUid, info);
+                        if (targetUid !== senderUid) {
+                            setTimeout(() => sendPrivateMsg(senderUid, `[系统] 查询结果已发送`), 500);
+                        }
+                        return;
+                    }
+
+                    // 3. 关键词回复
+                    for (const [keyword, reply] of Object.entries(keywordReplies)) {
+                        if (content.includes(keyword)) {
+                            await sendPrivateMsg(senderUid, reply);
+                            log(`触发关键词回复: ${keyword}`, "info");
+                            break;
+                        }
+                    }
+                }
+            } catch (e) {
+                log(`消息解析异常: ${e}`, "warn");
+            }
+        };
+
+        ws.onerror = (err) => log(`WebSocket 错误: ${err}`, "error");
+        ws.onclose = () => {
+            log("连接已断开", "warn");
+            updateStatus("已断开", "...");
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            ws = null;
+        };
+    }
+
+    function stopBot() {
+        if (ws) {
+            ws.close();
+            ws = null;
+            log("机器人已手动停止", "warn");
+            updateStatus("已停止", "...");
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+        }
+    }
+</script>
+
+</body>
+</html>
