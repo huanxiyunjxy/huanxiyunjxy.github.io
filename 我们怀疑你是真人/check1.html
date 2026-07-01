@@ -8,7 +8,7 @@
         .box { width: 400px; padding: 40px; border: 2px solid #333; border-radius: 12px; text-align: center; transition: 0.3s; }
         .box.success { border-color: #0f0; background: #020; }
         .box.fail { border-color: #f00; background: #200; }
-        .slider { width: 100%; height: 40px; background: #333; border-radius: 20px; margin-top: 20px; cursor: pointer; position: relative; }
+        .slider { width: 100%; height: 40px; background: #333; border-radius: 20px; margin-top: 20px; cursor: pointer; position: relative; user-select: none; }
         .knob { width: 40px; height: 40px; background: #fff; border-radius: 50%; position: absolute; top: 0; left: 0; pointer-events: none; transition: 0.1s; }
     </style>
 </head>
@@ -16,7 +16,7 @@
 
 <div class="box" id="verifyBox">
     <h2>🤖 机人验证</h2>
-    <p>请按住下方滑块，<br>尽量<b>匀速</b>地从左拖到右。</p>
+    <p>请按住下方滑块，<br>尽量<b>绝对匀速</b>地从左拖到右。（请将步进频率设为0.016s，否则可能误判为人类）</p>
     <div class="slider" id="slider">
         <div class="knob" id="knob"></div>
     </div>
@@ -30,44 +30,75 @@
     const status = document.getElementById('status');
 
     let isDragging = false;
-    let points = []; // 记录 {x, t}
+    let points = []; 
 
-    slider.addEventListener('mousedown', (e) => {
-        isDragging = true;
-        points = [];
-        box.className = 'box';
-        status.innerText = "正在分析你的生物轨迹...";
-        recordPoint(e.clientX);
-    });
-
+    slider.addEventListener('mousedown', (e) => startDrag(e.clientX));
     document.addEventListener('mousemove', (e) => {
         if (!isDragging) return;
-        recordPoint(e.clientX);
-        
-        // 更新滑块UI
-        let rect = slider.getBoundingClientRect();
-        let x = e.clientX - rect.left;
-        x = Math.max(0, Math.min(x, rect.width - 40));
-        knob.style.left = x + 'px';
+        // 防止鼠标在浏览器外部松开导致的卡死
+        if (e.buttons === 0) {
+            isDragging = false;
+            analyzeMovement();
+            return;
+        }
+        moveDrag(e.clientX);
     });
-
     document.addEventListener('mouseup', () => {
         if (!isDragging) return;
         isDragging = false;
         analyzeMovement();
     });
 
+    // 补充移动端触摸支持
+    slider.addEventListener('touchstart', (e) => startDrag(e.touches[0].clientX), { passive: true });
+    document.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        moveDrag(e.touches[0].clientX);
+    }, { passive: true });
+    document.addEventListener('touchend', () => {
+        if (!isDragging) return;
+        isDragging = false;
+        analyzeMovement();
+    });
+
+    function startDrag(clientX) {
+        isDragging = true;
+        points = [];
+        box.className = 'box';
+        status.innerText = "正在分析你的生物轨迹...";
+        recordPoint(clientX);
+    }
+
+    function moveDrag(clientX) {
+        recordPoint(clientX);
+        let rect = slider.getBoundingClientRect();
+        let x = clientX - rect.left;
+        x = Math.max(0, Math.min(x, rect.width - 40));
+        knob.style.left = x + 'px';
+    }
+
+    let lastRecordTime = 0;
     function recordPoint(x) {
-        points.push({ x: x, t: performance.now() });
+        const now = performance.now();
+        // 节流：限制最高 60fps 的记录频率，防止内存溢出
+        if (now - lastRecordTime < 16) return; 
+        points.push({ x: x, t: now });
+        lastRecordTime = now;
     }
 
     function analyzeMovement() {
         if (points.length < 10) {
-            failVerify("移动距离太短，请重试。");
-            return;
+            return failVerify("移动距离太短，请重试。");
         }
 
-        // 计算每两个相邻点之间的速度
+        // 1. 距离校验：确保滑块被拖到了轨道 80% 以上的宽度
+        const sliderWidth = slider.getBoundingClientRect().width;
+        const totalDistance = points[points.length - 1].x - points[0].x;
+        if (totalDistance < sliderWidth * 0.8) {
+            return failVerify("❌ 没有拖动到最右侧，请重试。");
+        }
+
+        // 2. 计算每两个相邻点之间的速度
         let speeds = [];
         for (let i = 1; i < points.length; i++) {
             let dx = points[i].x - points[i-1].x;
@@ -75,32 +106,32 @@
             if (dt > 0) speeds.push(Math.abs(dx / dt));
         }
 
-        // 计算速度的方差 (Variance)
+        // 3. 计算速度的方差 (Variance)
         let avg = speeds.reduce((a,b) => a+b, 0) / speeds.length;
         let variance = speeds.map(s => Math.pow(s - avg, 2)).reduce((a,b) => a+b, 0) / speeds.length;
 
-        // 核心判定：
-        // 1. 如果方差极小 (比如 < 0.0001)，说明速度几乎完全一样，这是机器绝对匀速。
-        // 2. 如果方差适中，说明有自然的加速减速和微颤，这是人类。
-        // (注：这里阈值需要根据实际测试微调，0.0001 是个参考值)
-        
         console.log("速度方差:", variance); 
 
-        if (variance < 0.0001) {
-            failVerify("❌ 我们怀疑你是真人。");
-        } else {
+        // 【机器人专用判定】
+        // 放宽阈值至 0.001，允许浏览器渲染和事件触发带来的微小误差
+        // 只有绝对匀速的机器轨迹才能通过
+        if (variance < 0.001) {
             passVerify();
+        } else {
+            failVerify("❌ 轨迹存在人类微颤，疑似真人。");
         }
     }
 
     function passVerify() {
         box.className = 'box success';
-        status.innerText = "✅ 验证通过：您是机器人。";
+        status.innerText = "✅ 验证通过：确认为机器人。";
     }
 
     function failVerify(msg) {
         box.className = 'box fail';
         status.innerText = msg;
+        // 失败后重置滑块位置，方便机器重试
+        knob.style.left = '0px'; 
     }
 </script>
 
