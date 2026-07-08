@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>控制台 · huanxiyun</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%);
+        font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        padding: 40px 20px;
+        overflow-y: auto;
+      }
+      .container {
+        width: 100%;
+        max-width: 600px;
+        animation: fadeInUp 0.8s ease-out;
+      }
+      .header { text-align: center; margin-bottom: 30px; }
+      .header .emoji { font-size: 60px; display: inline-block; animation: bounce 2s infinite; }
+      .header h1 { font-size: 28px; color: #fff; margin-top: 10px; text-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+      .header p { font-size: 14px; color: rgba(255,255,255,0.8); margin-top: 8px; }
+
+      /* 快捷入口网格 */
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+      .card {
+        background: rgba(255,255,255,0.25);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 24px;
+        border: 1px solid rgba(255,255,255,0.4);
+        color: #fff;
+        text-decoration: none;
+        transition: all 0.3s;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .card:hover { transform: translateY(-4px); background: rgba(255,255,255,0.35); box-shadow: 0 8px 30px rgba(0,0,0,0.1); }
+      .card .icon { font-size: 32px; }
+      .card .title { font-size: 16px; font-weight: 700; }
+      .card .desc { font-size: 12px; opacity: 0.8; line-height: 1.4; }
+
+      /* 底部操作区 */
+      .footer-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 10px;
+        padding: 0 5px;
+      }
+      .status-text { font-size: 13px; color: rgba(255,255,255,0.7); display: flex; align-items: center; gap: 6px; }
+      .dot { width: 8px; height: 8px; border-radius: 50%; background: #a8e6cf; display: inline-block; animation: pulse 2s infinite; }
+      
+      .logout-btn {
+        padding: 10px 24px;
+        background: rgba(255,255,255,0.2);
+        color: #fff;
+        border: 2px solid rgba(255,255,255,0.4);
+        border-radius: 50px;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.3s;
+        cursor: pointer;
+      }
+      .logout-btn:hover { background: #fff; color: #fbc2eb; border-color: #fff; transform: translateY(-2px); }
+
+      /* 动画 & 背景 */
+      .bubble { position: fixed; border-radius: 50%; background: rgba(255,255,255,0.15); animation: float 6s ease-in-out infinite; pointer-events: none; z-index: -1; }
+      .bubble:nth-child(1) { width: 100px; height: 100px; top: 5%; right: 5%; }
+      .bubble:nth-child(2) { width: 60px; height: 60px; bottom: 10%; left: 5%; animation-delay: 2s; }
+      .bubble:nth-child(3) { width: 80px; height: 80px; top: 50%; left: 80%; animation-delay: 4s; }
+
+      @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+      @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+      @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+      @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+
+      /* 响应式适配 */
+      @media (max-width: 480px) {
+        .grid { grid-template-columns: 1fr; }
+        .header h1 { font-size: 24px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bubble"></div><div class="bubble"></div><div class="bubble"></div>
+
+    <div class="container">
+      <div class="header">
+        <div class="emoji">🏡</div>
+        <h1>欢迎回来！</h1>
+        <p>这里是 huanxiyun 的专属控制台，今天也要开心哦~ ✨</p>
+      </div>
+
+      <!-- 快捷入口 -->
+      <div class="grid">
+        <a href="/notes" class="card">
+          <div class="icon">📝</div>
+          <div class="title">我的小笔记</div>
+          <div class="desc">记录一些奇思妙想和灵感碎片</div>
+        </a>
+        <a href="/files" class="card">
+          <div class="icon">📂</div>
+          <div class="title">私密文件柜</div>
+          <div class="desc">存放一些不想公开的宝贝资料</div>
+        </a>
+        <a href="/status" class="card">
+          <div class="icon">📊</div>
+          <div class="title">小站状态</div>
+          <div class="desc">看看服务器今天有没有在乖乖工作</div>
+        </a>
+        <a href="/settings" class="card">
+          <div class="icon">⚙️</div>
+          <div class="title">设置与偏好</div>
+          <div class="desc">调整小站的样式和功能开关</div>
+        </a>
+      </div>
+
+      <!-- 底部状态与退出 -->
+      <div class="footer-actions">
+        <div class="status-text">
+          <span class="dot"></span> 小站运行正常 · 已安全登录
+        </div>
+        <button class="logout-btn" onclick="logout()">🚪 退出小站</button>
+      </div>
+    </div>
+
+    <script>
+      // 1. 防偷渡检查：如果没有登录凭证，直接踢回验证页
+      if (localStorage.getItem('huanxiyun_auth') !== 'true') {
+        window.location.href = '/enter';
+      }
+
+      // 2. 退出登录逻辑
+      function logout() {
+        // 清除本地通行证
+        localStorage.removeItem('huanxiyun_auth');
+        // 软萌提示并跳转
+        alert('已经安全退出啦，下次见哦！👋');
+        window.location.href = '/';
+      }
+    </script>
+  </body>
+</html>
