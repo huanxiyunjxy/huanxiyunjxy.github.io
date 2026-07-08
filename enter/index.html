@@ -66,9 +66,21 @@
       .btn:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.15); color: #fbc2eb; }
       .btn:active { transform: translateY(0); }
 
+      /* 错误提示样式 */
+      .error-msg {
+        color: #fff;
+        margin-top: 15px;
+        font-size: 14px;
+        display: none;
+        background: rgba(255, 100, 100, 0.3);
+        padding: 10px;
+        border-radius: 10px;
+        animation: fadeInUp 0.3s ease-out;
+      }
+
       .back-link {
         display: inline-block;
-        margin-top: 20px;
+        margin-top: 25px;
         color: rgba(255,255,255,0.7);
         font-size: 13px;
         text-decoration: none;
@@ -98,14 +110,59 @@
         输入暗号，就能进来玩啦~
       </p>
 
-      <form action="/dashboard" method="POST"> <!-- 记得改你的实际跳转路径 -->
+      <form id="loginForm">
         <div class="input-group">
-          <input type="password" name="token" placeholder="在此输入暗号..." autocomplete="off" required />
+          <input type="text" id="tokenInput" placeholder="在此输入通行证..." autocomplete="off" required />
         </div>
         <button type="submit" class="btn">✨ 验证通过</button>
       </form>
 
+      <!-- 错误提示区域 -->
+      <div id="errorMsg" class="error-msg"></div>
+
       <a href="/" class="back-link">← 哎呀，走错门了，退回去</a>
     </div>
+
+    <script>
+      document.getElementById('loginForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const inputVal = document.getElementById('tokenInput').value.trim();
+        const errorMsg = document.getElementById('errorMsg');
+        errorMsg.style.display = 'none';
+
+        // 1. 基础格式校验：hxy- + 16位字符 + - + 4位数字
+        const regex = /^hxy-([A-Za-z0-9]{16})-(\d{4})$/;
+        const match = inputVal.match(regex);
+
+        if (!match) {
+          errorMsg.textContent = "通行证格式不对哦，检查一下有没有漏掉字符嘛~";
+          errorMsg.style.display = 'block';
+          return;
+        }
+
+        // 2. 校验码计算（与 C++ 逻辑完全一致）
+        const prefix = "hxy-";
+        const body = match[1];
+        const inputChecksum = parseInt(match[2], 10);
+
+        let sum = 0;
+        for (let i = 0; i < prefix.length; i++) sum += prefix.charCodeAt(i);
+        for (let i = 0; i < body.length; i++) sum += body.charCodeAt(i);
+        const calculatedChecksum = sum % 10000;
+
+        // 3. 校验码比对
+        if (inputChecksum !== calculatedChecksum) {
+          errorMsg.textContent = "校验码错误！这张通行证是伪造的吧？( •̀ ω •́ )y";
+          errorMsg.style.display = 'block';
+          document.getElementById('tokenInput').value = '';
+          return;
+        }
+
+        // 4. 验证通过，存入本地并跳转
+        localStorage.setItem('huanxiyun_auth', 'true');
+        // 记得把这里改成你实际的内部页面路径
+        window.location.href = '/dashboard'; 
+      });
+    </script>
   </body>
 </html>
