@@ -35,56 +35,44 @@
       /* 输入框样式 */
       .input-group { position: relative; margin-bottom: 20px; }
       input {
-        width: 100%;
-        padding: 16px 20px;
-        border: 2px solid rgba(255,255,255,0.5);
-        border-radius: 50px;
-        background: rgba(255,255,255,0.4);
-        color: #fff;
-        font-size: 16px;
-        outline: none;
-        transition: all 0.3s;
-        text-align: center;
-        letter-spacing: 2px;
+        width: 100%; padding: 16px 20px; border: 2px solid rgba(255,255,255,0.5);
+        border-radius: 50px; background: rgba(255,255,255,0.4); color: #fff;
+        font-size: 16px; outline: none; transition: all 0.3s; text-align: center; letter-spacing: 2px;
       }
       input::placeholder { color: rgba(255,255,255,0.6); letter-spacing: 0; }
       input:focus { border-color: #fff; background: rgba(255,255,255,0.6); box-shadow: 0 0 20px rgba(255,255,255,0.3); }
 
       .btn {
-        width: 100%;
-        padding: 16px;
-        background: #fff;
-        color: #a6c1ee;
-        font-size: 16px;
-        font-weight: 700;
-        border: none;
-        border-radius: 50px;
-        cursor: pointer;
-        transition: all 0.3s;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        width: 100%; padding: 16px; background: #fff; color: #a6c1ee;
+        font-size: 16px; font-weight: 700; border: none; border-radius: 50px;
+        cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
       }
       .btn:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.15); color: #fbc2eb; }
-      .btn:active { transform: translateY(0); }
 
       /* 错误提示样式 */
       .error-msg {
-        color: #fff;
-        margin-top: 15px;
-        font-size: 14px;
-        display: none;
-        background: rgba(255, 100, 100, 0.3);
-        padding: 10px;
-        border-radius: 10px;
-        animation: fadeInUp 0.3s ease-out;
+        color: #fff; margin-top: 15px; font-size: 14px; display: none;
+        background: rgba(255, 100, 100, 0.3); padding: 10px; border-radius: 10px;
       }
 
+      /* 滑块验证区域样式 (融合马卡龙风) */
+      #verifyArea { display: none; animation: fadeInUp 0.5s ease-out; }
+      .slider { 
+        width: 100%; height: 40px; background: rgba(255,255,255,0.3); 
+        border-radius: 20px; margin-top: 20px; cursor: pointer; position: relative; user-select: none; 
+      }
+      .knob { 
+        width: 40px; height: 40px; background: #fff; border-radius: 50%; 
+        position: absolute; top: 0; left: 0; pointer-events: none; transition: 0.1s; 
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      }
+      #status { margin-top: 20px; font-size: 14px; color: #fff; opacity: 0.9; }
+      .box.success { border-color: #a8e6cf; background: rgba(168, 230, 207, 0.2); }
+      .box.fail { border-color: #ff9a9e; background: rgba(255, 154, 158, 0.2); }
+
       .back-link {
-        display: inline-block;
-        margin-top: 25px;
-        color: rgba(255,255,255,0.7);
-        font-size: 13px;
-        text-decoration: none;
-        transition: color 0.3s;
+        display: inline-block; margin-top: 25px; color: rgba(255,255,255,0.7);
+        font-size: 13px; text-decoration: none; transition: color 0.3s;
       }
       .back-link:hover { color: #fff; }
 
@@ -92,77 +80,144 @@
       .bubble { position: fixed; border-radius: 50%; background: rgba(255,255,255,0.15); animation: float 6s ease-in-out infinite; pointer-events: none; z-index: -1; }
       .bubble:nth-child(1) { width: 80px; height: 80px; top: 10%; left: 10%; }
       .bubble:nth-child(2) { width: 120px; height: 120px; top: 60%; left: 80%; animation-delay: 1s; }
-      .bubble:nth-child(3) { width: 60px; height: 60px; top: 80%; left: 20%; animation-delay: 2s; }
-
       @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
       @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
       @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
     </style>
   </head>
   <body>
-    <div class="bubble"></div><div class="bubble"></div><div class="bubble"></div>
+    <div class="bubble"></div><div class="bubble"></div>
 
     <div class="container">
       <div class="emoji">🎫</div>
       <h1>请出示门票</h1>
-      <p class="desc">
-        这里是 huanxiyun 的私人领地<br>
-        输入暗号，就能进来玩啦~
-      </p>
+      <p class="desc">这里是 huanxiyun 的私人领地<br>输入暗号，证明你的身份吧~</p>
 
-      <form id="loginForm">
-        <div class="input-group">
-          <input type="text" id="tokenInput" placeholder="在此输入通行证..." autocomplete="off" required />
+      <!-- 第一步：通行证输入 -->
+      <div id="tokenArea">
+        <form id="loginForm">
+          <div class="input-group">
+            <input type="text" id="tokenInput" placeholder="在此输入通行证..." autocomplete="off" required />
+          </div>
+          <button type="submit" class="btn">✨ 验证通行证</button>
+        </form>
+        <div id="errorMsg" class="error-msg"></div>
+      </div>
+
+      <!-- 第二步：机人验证 -->
+      <div id="verifyArea">
+        <div class="box" id="verifyBox">
+          <h2 style="color:#fff; margin-bottom:10px;">🤖 机人验证</h2>
+          <p style="color:rgba(255,255,255,0.8); font-size:13px; margin-bottom:10px;">
+            请按住下方滑块，<b>绝对匀速</b>地从左拖到右。<br>(人类微颤会被无情拒绝哦)
+          </p>
+          <div class="slider" id="slider">
+            <div class="knob" id="knob"></div>
+          </div>
+          <p id="status">等待操作...</p>
         </div>
-        <button type="submit" class="btn">✨ 验证通过</button>
-      </form>
-
-      <!-- 错误提示区域 -->
-      <div id="errorMsg" class="error-msg"></div>
+      </div>
 
       <a href="/" class="back-link">← 哎呀，走错门了，退回去</a>
     </div>
 
     <script>
+      // ========== 第一步：通行证校验 ==========
       document.getElementById('loginForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const inputVal = document.getElementById('tokenInput').value.trim();
         const errorMsg = document.getElementById('errorMsg');
         errorMsg.style.display = 'none';
 
-        // 1. 基础格式校验：hxy- + 16位字符 + - + 4位数字
         const regex = /^hxy-([A-Za-z0-9]{16})-(\d{4})$/;
         const match = inputVal.match(regex);
-
         if (!match) {
           errorMsg.textContent = "通行证格式不对哦，检查一下有没有漏掉字符嘛~";
-          errorMsg.style.display = 'block';
-          return;
+          errorMsg.style.display = 'block'; return;
         }
 
-        // 2. 校验码计算（与 C++ 逻辑完全一致）
-        const prefix = "hxy-";
-        const body = match[1];
-        const inputChecksum = parseInt(match[2], 10);
-
+        const prefix = "hxy-", body = match[1], inputChecksum = parseInt(match[2], 10);
         let sum = 0;
         for (let i = 0; i < prefix.length; i++) sum += prefix.charCodeAt(i);
         for (let i = 0; i < body.length; i++) sum += body.charCodeAt(i);
-        const calculatedChecksum = sum % 10000;
-
-        // 3. 校验码比对
-        if (inputChecksum !== calculatedChecksum) {
+        
+        if (inputChecksum !== sum % 10000) {
           errorMsg.textContent = "校验码错误！这张通行证是伪造的吧？( •̀ ω •́ )y";
           errorMsg.style.display = 'block';
-          document.getElementById('tokenInput').value = '';
-          return;
+          document.getElementById('tokenInput').value = ''; return;
         }
 
-        // 4. 验证通过，存入本地并跳转
-        localStorage.setItem('huanxiyun_auth', 'true');
-        // 记得把这里改成你实际的内部页面路径
-        window.location.href = '/dashboard'; 
+        // 通行证正确，隐藏输入框，显示滑块验证
+        document.getElementById('tokenArea').style.display = 'none';
+        document.getElementById('verifyArea').style.display = 'block';
       });
+
+      // ========== 第二步：机人验证逻辑 ==========
+      const slider = document.getElementById('slider');
+      const knob = document.getElementById('knob');
+      const box = document.getElementById('verifyBox');
+      const status = document.getElementById('status');
+      let isDragging = false, points = [];
+
+      slider.addEventListener('mousedown', (e) => startDrag(e.clientX));
+      document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        if (e.buttons === 0) { isDragging = false; analyzeMovement(); return; }
+        moveDrag(e.clientX);
+      });
+      document.addEventListener('mouseup', () => { if (isDragging) { isDragging = false; analyzeMovement(); } });
+
+      slider.addEventListener('touchstart', (e) => startDrag(e.touches[0].clientX), { passive: true });
+      document.addEventListener('touchmove', (e) => { if (isDragging) moveDrag(e.touches[0].clientX); }, { passive: true });
+      document.addEventListener('touchend', () => { if (isDragging) { isDragging = false; analyzeMovement(); } });
+
+      function startDrag(clientX) {
+        isDragging = true; points = [];
+        box.className = 'box'; status.innerText = "正在分析你的生物轨迹...";
+        recordPoint(clientX);
+      }
+      function moveDrag(clientX) {
+        recordPoint(clientX);
+        let rect = slider.getBoundingClientRect();
+        let x = Math.max(0, Math.min(clientX - rect.left, rect.width - 40));
+        knob.style.left = x + 'px';
+      }
+      let lastRecordTime = 0;
+      function recordPoint(x) {
+        const now = performance.now();
+        if (now - lastRecordTime < 16) return; 
+        points.push({ x: x, t: now }); lastRecordTime = now;
+      }
+
+      function analyzeMovement() {
+        if (points.length < 10) return failVerify("移动距离太短，请重试。");
+        const sliderWidth = slider.getBoundingClientRect().width;
+        if (points[points.length - 1].x - points[0].x < sliderWidth * 0.8) return failVerify("❌ 没有拖动到最右侧，请重试。");
+
+        let speeds = [];
+        for (let i = 1; i < points.length; i++) {
+          let dx = points[i].x - points[i-1].x, dt = points[i].t - points[i-1].t;
+          if (dt > 0) speeds.push(Math.abs(dx / dt));
+        }
+        let avg = speeds.reduce((a,b) => a+b, 0) / speeds.length;
+        let variance = speeds.map(s => Math.pow(s - avg, 2)).reduce((a,b) => a+b, 0) / speeds.length;
+
+        if (variance < 0.001) passVerify();
+        else failVerify("❌ 轨迹存在人类微颤，疑似真人。");
+      }
+
+      function passVerify() {
+        box.className = 'box success';
+        status.innerText = "✅ 验证通过：确认为机器人。正在进入小站...";
+        // 终极通关：写入凭证并跳转
+        setTimeout(() => {
+          localStorage.setItem('huanxiyun_auth', 'true');
+          window.location.href = '/dashboard';
+        }, 1000);
+      }
+      function failVerify(msg) {
+        box.className = 'box fail'; status.innerText = msg; knob.style.left = '0px'; 
+      }
     </script>
   </body>
 </html>
