@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>通行证生成器</title>
+    <style>
+        /* 页面基础样式 */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        /* 卡片容器样式 */
+        .card {
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+
+        /* 通行证展示区域 */
+        .token-display {
+            background-color: #f8f9fa;
+            border: 1px dashed #ccc;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 18px;
+            color: #2c3e50;
+            word-break: break-all;
+            min-height: 24px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        /* 按钮样式 */
+        button {
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #357abd;
+        }
+
+        /* 复制成功提示样式 */
+        .copy-hint {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #27ae60;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>🎫 通行证生成器</h1>
+    <div id="tokenDisplay" class="token-display">点击下方按钮生成通行证...</div>
+    <button id="generateBtn">生成新通行证</button>
+    <div id="copyHint" class="copy-hint">✅ 已复制到剪贴板！</div>
+</div>
+
+<script>
+    // 常量配置 (与 C++ 代码保持一致)
+    const PREFIX = "hxy-";
+    const BODY_LENGTH = 16;
+    const CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+
+    /**
+     * 生成校验码：将前缀和主体部分的 ASCII 码累加，取模 10000 补齐 4 位
+     */
+    function generateChecksum(prefix, body) {
+        let sum = 0;
+        for (let c of prefix) sum += c.charCodeAt(0);
+        for (let c of body) sum += c.charCodeAt(0);
+        
+        let checksum = sum % 10000;
+        // 格式化为 4 位，不足补 0
+        return checksum.toString().padStart(4, '0');
+    }
+
+    /**
+     * 生成主体部分
+     * 注：JavaScript 的 Math.random() 在浏览器环境中由底层引擎处理，
+     * 每次加载页面都会自动获得不同的种子，不会出现 C++ 中 random_device 退化的问题。
+     */
+    function generateBody() {
+        let body = "";
+        for (let i = 0; i < BODY_LENGTH; ++i) {
+            const randomIndex = Math.floor(Math.random() * CHARS.length);
+            body += CHARS[randomIndex];
+        }
+        return body;
+    }
+
+    /**
+     * 拼接并返回完整的通行证
+     */
+    function generateToken() {
+        const body = generateBody();
+        const checksum = generateChecksum(PREFIX, body);
+        return `${PREFIX}${body}-${checksum}`;
+    }
+
+    // --- UI 交互逻辑 ---
+    const tokenDisplay = document.getElementById('tokenDisplay');
+    const generateBtn = document.getElementById('generateBtn');
+    const copyHint = document.getElementById('copyHint');
+
+    // 生成按钮点击事件
+    generateBtn.addEventListener('click', () => {
+        const newToken = generateToken();
+        tokenDisplay.textContent = newToken;
+        copyHint.style.opacity = '0'; // 生成新码时隐藏复制提示
+    });
+
+    // 点击展示区域复制通行证
+    tokenDisplay.addEventListener('click', () => {
+        const tokenText = tokenDisplay.textContent;
+        if (tokenText && tokenText !== '点击下方按钮生成通行证...') {
+            navigator.clipboard.writeText(tokenText).then(() => {
+                copyHint.style.opacity = '1';
+                setTimeout(() => { copyHint.style.opacity = '0'; }, 2000);
+            }).catch(err => {
+                console.error('复制失败:', err);
+            });
+        }
+    });
+</script>
+
+</body>
+</html>
